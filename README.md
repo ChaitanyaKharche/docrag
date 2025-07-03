@@ -1,17 +1,4 @@
-Of course. Here is a complete, improved, and detailed README file for your GitHub repository. It incorporates all the features we've built, includes best practices, and provides a clear, step-by-step guide for anyone (including your future self) to set up and run the project.
-
------
-
-\<div align="center"\>
-
 # DocRAG: A Graph-Powered RAG System for Technical Documentation
-
-\<p\>
-\<img alt="Python Version" src="[https://img.shields.io/badge/python-3.10%2B-blue](https://img.shields.io/badge/python-3.10%2B-blue)"\>
-\<img alt="License" src="[https://img.shields.io/badge/license-MIT-green](https://www.google.com/search?q=https://img.shields.io/badge/license-MIT-green)"\>
-\</p\>
-
-\</div\>
 
 An advanced Retrieval-Augmented Generation (RAG) system that transforms unstructured technical documentation into a structured, vectorized knowledge graph. This approach enables highly accurate, context-aware answers to complex questions by leveraging the relationships between different documentation entities.
 
