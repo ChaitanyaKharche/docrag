@@ -1,0 +1,23 @@
+# Virtual Environment
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Environment files
+.env
+.env.*
+
+# Data & Database files
+data/
+neo4j/
+*.log
+
+# IDE settings
+.vscode/
+.idea/
+
+# OS-specific files
+.DS_Store
+Thumbs.db

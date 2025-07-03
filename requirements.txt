@@ -1,0 +1,22 @@
+# Core libraries for scraping, processing, and orchestration
+requests
+beautifulsoup4
+lxml
+trafilatura
+pandas
+tabulate
+
+# LangChain for RAG pipelines and transformations
+langchain
+langchain-openai
+pydantic
+
+# Graph Database and Vector Store
+neo4j
+
+# API & Server
+fastapi
+uvicorn
+
+# Utilities
+python-dotenv
