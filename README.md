@@ -1,156 +1,226 @@
-DocScraper: A Graph RAG System for Technical Documentation
-This project implements a sophisticated, multi-stage Retrieval-Augmented Generation (RAG) system designed to answer complex questions about technical documentation. It moves beyond simple vector search by building and querying an intelligent knowledge graph, resulting in more accurate and contextually aware answers.
+Of course. Here is a complete, improved, and detailed README file for your GitHub repository. It incorporates all the features we've built, includes best practices, and provides a clear, step-by-step guide for anyone (including your future self) to set up and run the project.
 
-This system was built to ingest the entire React Flow documentation, but its architecture is generic and can be adapted for any documentation website.
+-----
 
-Architecture
-The system is composed of two main pipelines: a Data Ingestion Pipeline that builds the knowledge graph, and a Query Engine that uses the graph to answer questions.
+\<div align="center"\>
 
-1. Data Ingestion Pipeline
-This is a three-stage process that turns unstructured web pages into a structured, vectorized knowledge graph.
+# DocRAG: A Graph-Powered RAG System for Technical Documentation
 
-scraper.py (Crawl & Scrape): Starts with a seed URL and crawls the target domain, discovering all valid, on-site links. It downloads the raw HTML for each page and saves it, ensuring a complete and pristine copy of the source data.
+\<p\>
+\<img alt="Python Version" src="[https://img.shields.io/badge/python-3.10%2B-blue](https://img.shields.io/badge/python-3.10%2B-blue)"\>
+\<img alt="License" src="[https://img.shields.io/badge/license-MIT-green](https://www.google.com/search?q=https://img.shields.io/badge/license-MIT-green)"\>
+\</p\>
 
-parser.py (Parse & Structure): Reads the raw HTML files. Instead of naively stripping text, it intelligently parses the HTML structure, identifying headings, code blocks, and, most importantly, converting complex <table> structures into clean, well-formatted Markdown. This preserves the critical structure of the documentation.
+\</div\>
 
-graph_builder.py (Ingest & Vectorize): This is the core of the ingestion process.
+An advanced Retrieval-Augmented Generation (RAG) system that transforms unstructured technical documentation into a structured, vectorized knowledge graph. This approach enables highly accurate, context-aware answers to complex questions by leveraging the relationships between different documentation entities.
 
-It takes the clean Markdown from the parser.
+## Architecture
 
-It uses a powerful Large Language Model (gpt-4o) with Pydantic schemas to perform entity extraction, identifying Components, Props, Hooks, Utils, and Types.
+This project uses a multi-stage pipeline to ingest data and a sophisticated query engine to retrieve it.
 
-It connects to a Neo4j graph database.
+#### Data Flow Diagram
 
-For each extracted entity, it creates a corresponding node (e.g., :Component, :Prop).
+```
+┌────────────────┐   ┌───────────────────────────┐
+│   main.py      │──▶│ scraped_content_raw.json  │
+│ (Web Crawler)  │   │      (Raw HTML)           │
+└────────────────┘   └────────────┬──────────────┘
+                                  │
+                                  ▼
+┌────────────────┐   ┌──────────────────────────────┐
+│   parser.py    │──▶│ parsed_structured_content.json │
+│ (HTML->MD)     │   │      (Cleaned Markdown)        │
+└────────────────┘   └────────────┬──────────────────┘
+                                  │
+                                  ▼
+┌──────────────────┐   ┌──────────────────────────┐
+│ graph_builder.py │──▶│   Neo4j Graph Database   │
+│ (Ingest/Vectorize) │   │ (Nodes with Embeddings)  │
+└──────────────────┘   └────────────┬───────────────┘
+                                  │
+                                  ▼
+┌────────────────┐   ┌──────────────────────────┐
+│ query_engine.py│◀─▶│   Neo4j Graph Database   │
+│   (RAG Logic)  │   │ (Vector + Graph Search)  │
+└────────────────┘   └──────────────────────────┘
+```
 
-It creates relationships between entities (e.g., (:Component)-[:HAS_PROP]->(:Prop)).
+## Features
 
-It uses an embedding model (text-embedding-3-small) to create vector embeddings for the description of each entity and stores them directly on the nodes, creating a hybrid graph ready for both structured and semantic queries.
+  - **Multi-Stage Processing:** Decouples scraping, parsing, and ingestion for a robust and debuggable pipeline.
+  - **Graph-Based Knowledge:** Models documentation as a rich graph of interconnected Components, Props, Hooks, Utils, and Types, preserving vital relationships lost in simple vector stores.
+  - **Hybrid Search:** Combines semantic vector search (for finding relevant concepts) with deterministic graph traversal (for gathering accurate context).
+  - **Intelligent Contextual Retrieval:** The query engine automatically fetches definitions for related custom types mentioned in a prop or hook, providing the LLM with comprehensive context.
+  - **Extensible Entity System:** Easily expandable to include new entity types (e.g., Changelogs, Examples) by adding new Pydantic schemas.
 
-2. Query Engine
-The query engine uses an advanced, multi-step retrieval strategy to ensure high-quality context is provided to the final generation model.
+## Tech Stack
 
-query_engine.py (Retrieve & Generate):
+  - **Language:** Python 3.10+
+  - **Orchestration & LLM Interaction:** LangChain
+  - **LLM & Embeddings:** OpenAI (`gpt-4o`, `text-embedding-3-small`)
+  - **Database:** Neo4j (Graph Database with native Vector Index)
+  - **Web Scraping/Parsing:** `requests`, `BeautifulSoup4`
+  - **Containerization:** Docker
 
-The user's question is converted into a vector embedding.
+## Project Structure
 
-A vector search is performed across all relevant indexes (:Component, :Prop, :Hook, etc.) to find the most semantically similar entities in the graph.
+```
+docrag/
+├── .env                  # Stores API keys and secrets
+├── .gitignore            # Specifies files for Git to ignore
+├── requirements.txt      # Project dependencies
+├── data/                 # (Git-ignored) Directory for scraped and parsed data
+│   ├── scraped_content_raw.json
+│   └── parsed_structured_content.json
+├── neo4j/                # (Git-ignored) Directory for Neo4j database files
+│   ├── data/
+│   └── logs/
+└── src/                  # Main source code
+    ├── main.py           # The web crawler that fetches raw HTML
+    ├── parser.py         # The script that converts raw HTML to clean Markdown
+    ├── graph_builder.py  # The script that extracts entities and builds the graph
+    └── query_engine.py   # The final RAG application to ask questions
+```
 
-Contextual Graph Traversal: The system then enriches this initial context. For example, if a Prop is retrieved, the engine traverses the graph to find which Component it belongs to. If a prop's type is a custom Type (e.g., NodeOrigin), it fetches the definition of that :Type node as well.
+## Setup and Installation
 
-This rich, multi-faceted context is compiled and passed to the final LLM (gpt-4o).
+### 1\. Prerequisites
 
-The LLM synthesizes the detailed context into a comprehensive, accurate answer.
+  - **Python 3.10+**: [Download Python](https://www.python.org/downloads/)
+  - **Docker Desktop**: [Download Docker](https://www.docker.com/products/docker-desktop/). Ensure the Docker application is running before you start.
+  - **Git**: [Download Git](https://git-scm.com/download/win)
 
-Setup and Installation (Windows)
-Prerequisites
-Python 3.10+: Ensure Python is installed and accessible from your terminal.
+### 2\. Initial Setup
 
-Docker Desktop: Install and run Docker Desktop. This is required to run the Neo4j database.
+1.  **Clone the Repository:**
 
-Download from docker.com.
+    ```powershell
+    git clone https://github.com/ChaitanyaKharche/docrag.git
+    cd docrag
+    ```
 
-Ensure Docker Desktop is running before proceeding.
+2.  **Create and Activate Virtual Environment:**
 
-Installation Steps
-Create Project Directory:
-Open PowerShell and create your project folder.
+    ```powershell
+    python -m venv venv
+    .\venv\Scripts\Activate.ps1
+    ```
 
-mkdir docscraper
-cd docscraper
+3.  **Create `.env` file:**
+    Create a file named `.env` in the project root and add your secrets.
 
-Set up Python Virtual Environment:
+      * Get an API key from [platform.openai.com](https://platform.openai.com/).
 
-python -m venv venv
-.\venv\Scripts\Activate.ps1
+    <!-- end list -->
 
-(Your terminal prompt should now be prefixed with (venv)).
+    ```env
+    OPENAI_API_KEY="sk-..."
+    NEO4J_PASSWORD="your-strong-password-here"
+    ```
 
-Create Project Files:
-Create the following files inside the docscraper directory.
+4.  **Install Dependencies:**
+    Install all required Python packages from `requirements.txt`.
 
-requirements.txt:
+    ```powershell
+    pip install -r requirements.txt
+    ```
 
-requests
-beautifulsoup4
-lxml
-pandas
-tabulate
-langchain
-langchain-openai
-neo4j
-python-dotenv
+## Execution Workflow
 
-.env:
+Follow these steps in order to run the entire pipeline.
 
-OPENAI_API_KEY="sk-..."
-NEO4J_PASSWORD="your_neo4j_password"
+### Step 1: Start the Neo4j Database
 
-(Replace with your actual OpenAI key and the password you will use for Neo4j).
+In a **new terminal** (do not activate the `venv`), run the following Docker command. This will download and start your Neo4j database container.
 
-Install Dependencies:
+**Note:** Make sure to replace `your-strong-password-here` with the same password you set in your `.env` file.
 
-pip install -r requirements.txt
-
-Running the System: Full Workflow
-Follow these steps in order to populate the database and run queries.
-
-Step 1: Start the Neo4j Database
-Run this command in a new PowerShell terminal (do not activate the venv here). This will download the Neo4j image and start the database container.
-
+```powershell
 docker run `
-    --name docscraper-neo4j `
+    --name docrag-neo4j `
     -p 7474:7474 -p 7687:7687 `
     -d `
-    -v ${PWD}/neo4j/data:/data `
-    -v ${PWD}/neo4j/logs:/logs `
-    --env NEO4J_AUTH=neo4j/your_neo4j_password `
+    -v "$($pwd)\neo4j\data:/data" `
+    -v "$($pwd)\neo4j\logs:/logs" `
+    --env NEO4J_AUTH="neo4j/your-strong-password-here" `
     --env NEO4J_PLUGINS='["graph-data-science"]' `
     neo4j:5.18.1
+```
 
-(Make sure to replace your_neo4j_password with the same password you put in your .env file).
+  * `-p 7474:7474`: Exposes the Neo4j web browser interface.
+  * `-p 7687:7687`: Exposes the Bolt protocol for the Python driver.
+  * `-v ...`: Mounts local directories for persistent database storage.
 
-Step 2: Create Vector Indexes
-Navigate to the Neo4j Browser in your web browser: http://localhost:7474
+### Step 2: Create Database Vector Indexes
 
-Connect using the username neo4j and your password.
+Before ingesting data, you must create the vector indexes.
 
-Run the following four commands one by one in the query bar:
+1.  Navigate to the Neo4j Browser: `http://localhost:7474`
 
-CREATE VECTOR INDEX `component_descriptions` IF NOT EXISTS FOR (n:Component) ON (n.embedding) OPTIONS { indexConfig: { `vector.dimensions`: 1536, `vector.similarity_function`: 'cosine' }};
+2.  Connect with username `neo4j` and your password.
 
-CREATE VECTOR INDEX `prop_descriptions` IF NOT EXISTS FOR (n:Prop) ON (n.embedding) OPTIONS { indexConfig: { `vector.dimensions`: 1536, `vector.similarity_function`: 'cosine' }};
+3.  Run these five Cypher commands one by one in the query bar:
 
-CREATE VECTOR INDEX `hook_descriptions` IF NOT EXISTS FOR (n:Hook) ON (n.embedding) OPTIONS { indexConfig: { `vector.dimensions`: 1536, `vector.similarity_function`: 'cosine' }};
+    ```cypher
+    CREATE VECTOR INDEX `component_descriptions` IF NOT EXISTS FOR (n:Component) ON (n.embedding) OPTIONS { indexConfig: { `vector.dimensions`: 1536, `vector.similarity_function`: 'cosine' }};
+    ```
 
-CREATE VECTOR INDEX `util_descriptions` IF NOT EXISTS FOR (n:Util) ON (n.embedding) OPTIONS { indexConfig: { `vector.dimensions`: 1536, `vector.similarity_function`: 'cosine' }};
+    ```cypher
+    CREATE VECTOR INDEX `prop_descriptions` IF NOT EXISTS FOR (n:Prop) ON (n.embedding) OPTIONS { indexConfig: { `vector.dimensions`: 1536, `vector.similarity_function`: 'cosine' }};
+    ```
 
-CREATE VECTOR INDEX `type_descriptions` IF NOT EXISTS FOR (n:Type) ON (n.embedding) OPTIONS { indexConfig: { `vector.dimensions`: 1536, `vector.similarity_function`: 'cosine' }};
+    ```cypher
+    CREATE VECTOR INDEX `hook_descriptions` IF NOT EXISTS FOR (n:Hook) ON (n.embedding) OPTIONS { indexConfig: { `vector.dimensions`: 1536, `vector.similarity_function`: 'cosine' }};
+    ```
 
-Step 3: Scrape the Website
-In your terminal with the (venv) activated, run the scraper. This will fetch the raw HTML of all pages.
+    ```cypher
+    CREATE VECTOR INDEX `util_descriptions` IF NOT EXISTS FOR (n:Util) ON (n.embedding) OPTIONS { indexConfig: { `vector.dimensions`: 1536, `vector.similarity_function`: 'cosine' }};
+    ```
 
-python src/main.py
+    ```cypher
+    CREATE VECTOR INDEX `type_descriptions` IF NOT EXISTS FOR (n:Type) ON (n.embedding) OPTIONS { indexConfig: { `vector.dimensions`: 1536, `vector.similarity_function`: 'cosine' }};
+    ```
 
-Output: data/scraped_content_raw.json
+### Step 3: Run the Data Pipeline
 
-Step 4: Parse the Raw HTML
-Next, run the parser to convert the raw HTML into structured Markdown.
+In your original terminal (with the `venv` activated), run the following scripts in order.
 
-python src/parser.py
+1.  **Scrape the Website:**
 
-Output: data/parsed_structured_content.json
+    ```powershell
+    python src/main.py
+    ```
 
-Step 5: Build the Knowledge Graph
-Now, run the graph builder to populate your Neo4j database. This will take several minutes and will make calls to the OpenAI API.
+2.  **Parse the Raw HTML:**
 
-python src/graph_builder.py
+    ```powershell
+    python src/parser.py
+    ```
 
-Output: A fully populated and vectorized Neo4j database.
+3.  **Build the Knowledge Graph:** (This will take several minutes)
 
-Step 6: Ask Questions!
-You are now ready to query your RAG system.
+    ```powershell
+    python src/graph_builder.py
+    ```
 
+### Step 4: Query the System
+
+Your knowledge graph is now complete and ready to be used. Run the query engine to ask a question.
+
+```powershell
 python src/query_engine.py
+```
 
-Output: The script will ask a pre-defined question and print the retrieved context and the final, generated answer. You can modify the question variable in query_engine.py to ask your own questions.
+You can change the default question inside `query_engine.py` to explore the documentation.
+
+## Future Improvements
+
+  - **Changelog Integration:** Parse the changelog and create `:Version` nodes, linking them to entities to answer version-specific questions.
+  - **Interactive API:** Wrap the `query_engine.py` logic in a FastAPI application to serve the RAG system as a web endpoint.
+  - **Advanced Relationships:** Extract more nuanced relationships, such as which Hooks are used by which Components, by parsing code blocks.
+  - **Support for More Documentation:** Adapt the `parser.py` script with custom logic for the unique HTML structure of other documentation sites.
+
+## License
+
+This project is licensed under the MIT License. See the [LICENSE](LICENSE.md) file for details.
